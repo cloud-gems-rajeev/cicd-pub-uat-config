@@ -5,7 +5,7 @@ on:
   repository_dispatch:
     types: [trigger-uat-deploy]  # Trigger when the development branch is updated
 
-env:
+env:cgfdgdfgdf
   IMAGE_TAG: "v${{ github.run_number }}"
   FRONTEND_IMAGE: "cloudgemsny/gemsny:uat-store-frontend-v${{ github.run_number }}"
   KUBECONFIG_FILE: "k8s/gemsny-uat.yaml"
