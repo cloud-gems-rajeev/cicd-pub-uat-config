@@ -28,7 +28,7 @@ jobs:
       with:
         repository: gemsnyindia/GemsnyStoreFE
         ref: uat-staging
-        token: ${{ secrets.UAT_TOKEN }}
+        token: ${{ secrets.UAT_PUB_TOKEN }}
         path: GemsnyStoreFE
 
     - name: Log in to Docker Hub
