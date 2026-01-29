@@ -12,7 +12,7 @@ env:
 
 jobs:
   deploy-frontend:
-    runs-on: self-hosted      # Your self-hosted runner
+    runs-on: ubuntu-22.04      # Github cloud based runner
 
     steps:
     - name: Checkout cicd-uat-config
@@ -20,7 +20,7 @@ jobs:
       with:
         repository: gemsnyindia/cicd-uat-config
         ref: main
-        token: ${{ secrets.UAT_TOKEN }}
+        token: ${{ secrets.UAT_PUB_TOKEN }}
         path: cicd-config
 
     - name: Checkout GemsnyStoreFE
@@ -37,25 +37,44 @@ jobs:
         username: ${{ secrets.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASS }}
 
-    - name: Debug groups
-      run: id
+    - name: Export frontend environment variables
+      run: |
+        echo "NEXT_PUBLIC_TAG_MANAGER_ID=${{ secrets.NEXT_PUBLIC_TAG_MANAGER_ID }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_LOCAL_URL=${{ secrets.NEXT_PUBLIC_LOCAL_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_IMAGES_CDN_PATH=${{ secrets.NEXT_PUBLIC_IMAGES_CDN_PATH }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_CAPTCHA_KEY=${{ secrets.NEXT_PUBLIC_CAPTCHA_KEY }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AFFIRM=${{ secrets.NEXT_PUBLIC_AFFIRM }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_LOCAL_ADMIN_URL=${{ secrets.NEXT_PUBLIC_LOCAL_ADMIN_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_BASIC_IMG=${{ secrets.NEXT_PUBLIC_BASIC_IMG }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_GOOGLE_MAP_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAP_API_KEY }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AMAZON_PAY_PUBLIC_KEY_ID=${{ secrets.NEXT_PUBLIC_AMAZON_PAY_PUBLIC_KEY_ID }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AMAZON_PAY_STORE_ID=${{ secrets.NEXT_PUBLIC_AMAZON_PAY_STORE_ID }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AMAZON_PAY_MERCHANT_ID=${{ secrets.NEXT_PUBLIC_AMAZON_PAY_MERCHANT_ID }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AMAZON_PAY_REGION=${{ secrets.NEXT_PUBLIC_AMAZON_PAY_REGION }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AMAZON_PAY_SANDBOX=${{ secrets.NEXT_PUBLIC_AMAZON_PAY_SANDBOX }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_PAYPAL_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_SECRET }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_PAYPAL_BASE_URL=${{ secrets.NEXT_PUBLIC_PAYPAL_BASE_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AFFIRM_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_AFFIRM_PUBLIC_KEY }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AFFIRM_API_URL=${{ secrets.NEXT_PUBLIC_AFFIRM_API_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_AFFIRM_PRIVATE_KEY=${{ secrets.NEXT_PUBLIC_AFFIRM_PRIVATE_KEY }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_PRODUCT_KEY=${{ secrets.NEXT_PUBLIC_PRODUCT_KEY }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_MEILEI_SEARCH_HOST=${{ secrets.NEXT_PUBLIC_MEILEI_SEARCH_HOST }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_MEILEI_SEARCH_API_KEY_FRONT=${{ secrets.NEXT_PUBLIC_MEILEI_SEARCH_API_KEY_FRONT }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_ADMINPANEL_URL=${{ secrets.NEXT_PUBLIC_ADMINPANEL_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_EXTEND_ENVIRONMENT=${{ secrets.NEXT_PUBLIC_EXTEND_ENVIRONMENT }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_EXTEND_STORE_ID=${{ secrets.NEXT_PUBLIC_EXTEND_STORE_ID }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_BING_SCRIPT_ALLOW=${{ secrets.NEXT_PUBLIC_BING_SCRIPT_ALLOW }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_ENVIRONMENT=${{ secrets.NEXT_PUBLIC_ENVIRONMENT }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_EVENT_DELIVERY_NOTE_SHOW=${{ secrets.NEXT_PUBLIC_EVENT_DELIVERY_NOTE_SHOW }}" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_MIN_LEAD_DAYS=${{ secrets.NEXT_PUBLIC_MIN_LEAD_DAYS }}" >> $GITHUB_ENV
+
 
     - name: Build Frontend Docker Image
       working-directory: GemsnyStoreFE
-      run: |
-        # Load .env safely
-        # set -o allexport
-        # grep -v -E '^\s*#|^\s*$' /opt/config-env/frontendenv/.env | sed 's/\r$//' | while IFS='=' read -r key value; do
-        #   export "$key=$value"
-        # done
-        # set +o allexport
-
-        # Clean Windows-style line endings
-        sed -i 's/\r$//' /opt/config-env/frontendenv/.env
-        export $(grep -v '^#' /opt/config-env/frontendenv/.env | xargs)        
-
-
-
+      run: |   
         # Build Docker image with all NEXT_PUBLIC_* args
         docker build \
           --build-arg NEXT_PUBLIC_TAG_MANAGER_ID=$NEXT_PUBLIC_TAG_MANAGER_ID \
@@ -96,86 +115,21 @@ jobs:
     - name: Push Frontend Docker Image
       run: docker push ${{ env.FRONTEND_IMAGE }}
 
-    # - name: Load .env on Windows
-    #   shell: powershell
-    #   run: |
-    #     $envFile = "D:\.env"
-
-    #     if (!(Test-Path $envFile)) {
-    #       Write-Error ".env file not found at $envFile"
-    #       exit 1
-    #     }
-
-    #     # Normalize line endings
-    #     (Get-Content $envFile) -replace "`r", "" | Set-Content $envFile
-
-    #     # Load env vars into process
-    #     Get-Content $envFile |
-    #       Where-Object { $_ -and -not $_.StartsWith("#") } |
-    #       ForEach-Object {
-    #         $name, $value = $_ -split "=", 2
-    #         [System.Environment]::SetEnvironmentVariable($name, $value, "Process")
-    #       }
-
-
-    # - name: Build Frontend Docker Image
-    #   working-directory: GemsnyStoreFE
-    #   shell: powershell
-    #   run: |
-    #     docker build `
-    #       --build-arg NEXT_PUBLIC_TAG_MANAGER_ID=$env:NEXT_PUBLIC_TAG_MANAGER_ID `
-    #       --build-arg NEXT_PUBLIC_LOCAL_URL=$env:NEXT_PUBLIC_LOCAL_URL `
-    #       --build-arg NEXT_PUBLIC_IMAGES_CDN_PATH=$env:NEXT_PUBLIC_IMAGES_CDN_PATH `
-    #       --build-arg NEXT_PUBLIC_CAPTCHA_KEY=$env:NEXT_PUBLIC_CAPTCHA_KEY `
-    #       --build-arg NEXT_PUBLIC_AFFIRM=$env:NEXT_PUBLIC_AFFIRM `
-    #       --build-arg NEXT_PUBLIC_LOCAL_ADMIN_URL=$env:NEXT_PUBLIC_LOCAL_ADMIN_URL `
-    #       --build-arg NEXT_PUBLIC_BASIC_IMG=$env:NEXT_PUBLIC_BASIC_IMG `
-    #       --build-arg NEXT_PUBLIC_BASE_URL=$env:NEXT_PUBLIC_BASE_URL `
-    #       --build-arg NEXT_PUBLIC_GOOGLE_MAP_API_KEY=$env:NEXT_PUBLIC_GOOGLE_MAP_API_KEY `
-    #       --build-arg NEXT_PUBLIC_AMAZON_PAY_PUBLIC_KEY_ID=$env:NEXT_PUBLIC_AMAZON_PAY_PUBLIC_KEY_ID `
-    #       --build-arg NEXT_PUBLIC_AMAZON_PAY_STORE_ID=$env:NEXT_PUBLIC_AMAZON_PAY_STORE_ID `
-    #       --build-arg NEXT_PUBLIC_AMAZON_PAY_MERCHANT_ID=$env:NEXT_PUBLIC_AMAZON_PAY_MERCHANT_ID `
-    #       --build-arg NEXT_PUBLIC_AMAZON_PAY_REGION=$env:NEXT_PUBLIC_AMAZON_PAY_REGION `
-    #       --build-arg NEXT_PUBLIC_AMAZON_PAY_SANDBOX=$env:NEXT_PUBLIC_AMAZON_PAY_SANDBOX `
-    #       --build-arg NEXT_PUBLIC_PAYPAL_CLIENT_ID=$env:NEXT_PUBLIC_PAYPAL_CLIENT_ID `
-    #       --build-arg NEXT_PUBLIC_PAYPAL_CLIENT_SECRET=$env:NEXT_PUBLIC_PAYPAL_CLIENT_SECRET `
-    #       --build-arg NEXT_PUBLIC_PAYPAL_BASE_URL=$env:NEXT_PUBLIC_PAYPAL_BASE_URL `
-    #       --build-arg NEXT_PUBLIC_AFFIRM_PUBLIC_KEY=$env:NEXT_PUBLIC_AFFIRM_PUBLIC_KEY `
-    #       --build-arg NEXT_PUBLIC_AFFIRM_API_URL=$env:NEXT_PUBLIC_AFFIRM_API_URL `
-    #       --build-arg NEXT_PUBLIC_AFFIRM_PRIVATE_KEY=$env:NEXT_PUBLIC_AFFIRM_PRIVATE_KEY `
-    #       --build-arg NEXT_PUBLIC_PRODUCT_KEY=$env:NEXT_PUBLIC_PRODUCT_KEY `
-    #       --build-arg NEXT_PUBLIC_MEILEI_SEARCH_HOST=$env:NEXT_PUBLIC_MEILEI_SEARCH_HOST `
-    #       --build-arg NEXT_PUBLIC_MEILEI_SEARCH_API_KEY_FRONT=$env:NEXT_PUBLIC_MEILEI_SEARCH_API_KEY_FRONT `
-    #       --build-arg NEXT_PUBLIC_ADMINPANEL_URL=$env:NEXT_PUBLIC_ADMINPANEL_URL `
-    #       --build-arg NEXT_PUBLIC_EXTEND_ENVIRONMENT=$env:NEXT_PUBLIC_EXTEND_ENVIRONMENT `
-    #       --build-arg NEXT_PUBLIC_EXTEND_STORE_ID=$env:NEXT_PUBLIC_EXTEND_STORE_ID `
-    #       --build-arg NEXT_PUBLIC_BING_SCRIPT_ALLOW=$env:NEXT_PUBLIC_BING_SCRIPT_ALLOW `
-    #       --build-arg NEXT_PUBLIC_ENVIRONMENT=$env:NEXT_PUBLIC_ENVIRONMENT `
-    #       --build-arg NEXT_PUBLIC_SITE_URL=$env:NEXT_PUBLIC_SITE_URL `
-    #       --build-arg NEXT_PUBLIC_AFFIRM_PUBLIC=$env:NEXT_PUBLIC_AFFIRM_PUBLIC `
-    #       --build-arg NEXT_PUBLIC_EVENT_DELIVERY_NOTE_SHOW=$env:NEXT_PUBLIC_EVENT_DELIVERY_NOTE_SHOW `
-    #       --build-arg NEXT_PUBLIC_MIN_LEAD_DAYS=$env:NEXT_PUBLIC_MIN_LEAD_DAYS `
-    #       -t ${{ env.FRONTEND_IMAGE }} `
-    #       -f ../cicd-config/Frontend/Dockerfile .
-
-    # - name: Push Frontend Docker Image
-    #   run: docker push ${{ env.FRONTEND_IMAGE }}
-
 
   # =============================
   # Deploy to Kubernetes
   # =============================
-  # deploy-to-k8s:
-  #   runs-on: self-hosted   # Server B (Deploy Server)
-  #   needs: deploy-frontend  # Run only after build completes
-  #   steps:
-  #   - name: Checkout cicd-uat-config
-  #     uses: actions/checkout@v3
-  #     with:
-  #       repository: gemsnyindia/cicd-uat-config
-  #       ref: uat-staging
-  #       token: ${{ secrets.UAT_TOKEN }}
-  #       path: cicd-config
+  deploy-to-k8s:
+    runs-on: self-hosted   # Server B (Deploy Server)
+    needs: deploy-frontend  # Run only after build completes
+    steps:
+    - name: Checkout cicd-uat-config
+      uses: actions/checkout@v3
+      with:
+        repository: gemsnyindia/cicd-uat-config
+        ref: uat-staging
+        token: ${{ secrets.UAT_PUB_TOKEN }}
+        path: cicd-config
 
     - name: Deploy Frontend to Kubernetes
       working-directory: cicd-config
