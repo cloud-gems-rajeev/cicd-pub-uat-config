@@ -2,8 +2,8 @@ name: UAT Frontend Deployment
 
 on:
   workflow_dispatch:  # Manual trigger
-  repository_dispatch:
-    # types: [trigger-uat-deploy]  # Trigger when the development branch is updated
+  # repository_dispatch:
+  #   types: [trigger-uat-deploy]  # Trigger when the development branch is updated
 
 env:
   IMAGE_TAG: "v${{ github.run_number }}"
