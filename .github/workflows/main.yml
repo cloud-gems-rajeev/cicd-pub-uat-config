@@ -120,7 +120,7 @@ jobs:
   # Deploy to Kubernetes
   # =============================
   deploy-to-k8s:
-    runs-on: self-hosted   # Server B (Deploy Server)
+    runs-on: [self-hosted, deploy-runner-pub]   # Server B (Deploy Server)
     needs: deploy-frontend  # Run only after build completes
     steps:
     - name: Checkout cicd-uat-config
